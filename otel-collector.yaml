@@ -1,0 +1,32 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 256
+
+exporters:
+  # MLflow serves OTLP/HTTP trace ingestion at /v1/traces; otlp_http appends that path to
+  # `endpoint`. The header routes spans to an experiment ("0" = Default).
+  otlp_http/mlflow:
+    endpoint: http://mlflow:5000
+    headers:
+      x-mlflow-experiment-id: "0"
+    tls:
+      insecure: true
+  # Echo spans to collector logs while wiring things up.
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http/mlflow, debug]

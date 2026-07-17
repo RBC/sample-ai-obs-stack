@@ -1,0 +1,4 @@
+langgraph>=0.2
+langchain>=0.3
+langchain-ollama>=0.2
+langsmith[otel]>=0.4.25

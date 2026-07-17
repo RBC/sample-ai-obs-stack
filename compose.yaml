@@ -1,0 +1,40 @@
+services:
+  mlflow:
+    # Stock MLflow. It exposes an OTLP/HTTP trace-ingestion endpoint at /v1/traces, which the
+    # collector forwards to. A SQL backend is REQUIRED for trace storage (file store 501s).
+    image: ghcr.io/mlflow/mlflow:v3.11.1
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - sqlite:////mlflow/mlflow.db
+      - --default-artifact-root
+      - /mlflow/artifacts
+    environment:
+      # MLflow 3.11 added Host-header validation; "*" disables it for a local stack.
+      - MLFLOW_SERVER_ALLOWED_HOSTS=*
+    volumes:
+      - mlflow-data:/mlflow
+    ports:
+      # Host 5001 -> container 5000 (macOS AirPlay Receiver squats on 5000).
+      - "5001:5000"
+
+  otel-collector:
+    # The vendor-neutral seam: the agent speaks OTLP to :4318, the collector forwards to a
+    # backend. Retarget it (Langfuse, Phoenix, Tempo, Jaeger) without touching the agent.
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config", "/etc/otel/config.yaml"]
+    volumes:
+      - ./otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP  <- the agent exports here
+    depends_on:
+      - mlflow
+
+volumes:
+  mlflow-data:
