@@ -27,6 +27,8 @@ python agent/agent.py "weather in Toronto?" "weather in Vancouver?"
 Then open <http://localhost:5001> → **Experiments → Default → Traces**: each prompt is a
 trace — the LLM calls, the `get_weather` tool call, the final answer — as a span tree.
 
+> Where to look: a span's inputs are in its `gen_ai.prompt` attribute, outputs in `gen_ai.completion` — tool calls included (expand the first `ChatOllama` span's `gen_ai.completion` to see `tool_calls`).
+
 Tracing is pure env config (defaults set at the top of `agent/agent.py`): `LANGSMITH_TRACING`,
 `LANGSMITH_OTEL_ENABLED`, `LANGSMITH_OTEL_ONLY` (OTLP only — no LangSmith cloud, no API key),
 and `OTEL_EXPORTER_OTLP_ENDPOINT`. The agent code itself never mentions tracing.
